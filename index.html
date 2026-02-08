@@ -62,23 +62,36 @@
 
   <script>
     var params = new URLSearchParams(window.location.search);
+    var mode = params.get('mode') || 'redirect';
     var redirectUrl = params.get('redirect') || '';
     var clientId = params.get('client_id') || '';
 
-    if (!redirectUrl || !clientId) {
+    if (!clientId) {
+      document.getElementById('loginError').textContent = 'Parâmetros em falta. Aceda à aplicação pelo link habitual.';
+      document.getElementById('loginError').style.display = 'block';
+    }
+    if (mode === 'redirect' && !redirectUrl) {
       document.getElementById('loginError').textContent = 'Parâmetros em falta. Aceda à aplicação pelo link habitual.';
       document.getElementById('loginError').style.display = 'block';
     }
 
     function handleCredentialResponse(response) {
-      if (!redirectUrl) return;
       var token = response.credential;
-      var separator = redirectUrl.indexOf('?') >= 0 ? '&' : '?';
-      window.location.href = redirectUrl + separator + 'idToken=' + encodeURIComponent(token);
+
+      if (mode === 'popup' && window.opener) {
+        // Popup mode: send token back to opener via postMessage
+        window.opener.postMessage({ type: 'gis-token', idToken: token }, '*');
+        window.close();
+      } else if (redirectUrl) {
+        // Redirect mode: navigate to Apps Script URL with token
+        var separator = redirectUrl.indexOf('?') >= 0 ? '&' : '?';
+        window.location.href = redirectUrl + separator + 'idToken=' + encodeURIComponent(token);
+      }
     }
 
     function initGIS() {
-      if (!clientId || !redirectUrl) return;
+      if (!clientId) return;
+      if (mode === 'redirect' && !redirectUrl) return;
       google.accounts.id.initialize({
         client_id: clientId,
         callback: handleCredentialResponse,
