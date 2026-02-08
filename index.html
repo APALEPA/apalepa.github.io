@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APALEPA Desporto - Login</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #2c3e50;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(34,54,103,0.15);
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+    }
+    .login-title {
+      color: #223667;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .login-subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    #gisButton { display: inline-block; }
+    .login-error {
+      color: #e74c3c;
+      margin-top: 16px;
+      font-size: 13px;
+      display: none;
+    }
+    .login-footer {
+      margin-top: 32px;
+      color: #999;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div style="margin-bottom: 20px; font-size: 48px;">&#9917;</div>
+    <div class="login-title">APALEPA - Desporto</div>
+    <div class="login-subtitle">Faça login com a sua conta Google para continuar</div>
+    <div id="gisButton"></div>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-footer">Externato Paulo VI - Associação de Pais</div>
+  </div>
+
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var redirectUrl = params.get('redirect') || '';
+    var clientId = params.get('client_id') || '';
+
+    if (!redirectUrl || !clientId) {
+      document.getElementById('loginError').textContent = 'Parâmetros em falta. Aceda à aplicação pelo link habitual.';
+      document.getElementById('loginError').style.display = 'block';
+    }
+
+    function handleCredentialResponse(response) {
+      if (!redirectUrl) return;
+      var token = response.credential;
+      var separator = redirectUrl.indexOf('?') >= 0 ? '&' : '?';
+      window.location.href = redirectUrl + separator + 'idToken=' + encodeURIComponent(token);
+    }
+
+    function initGIS() {
+      if (!clientId || !redirectUrl) return;
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleCredentialResponse,
+        auto_select: true
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('gisButton'),
+        { theme: 'outline', size: 'large', text: 'signin_with', locale: 'pt' }
+      );
+      google.accounts.id.prompt();
+    }
+
+    if (typeof google !== 'undefined' && google.accounts) {
+      initGIS();
+    } else {
+      var iv = setInterval(function() {
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+          clearInterval(iv);
+          initGIS();
+        }
+      }, 100);
+    }
+  </script>
+</body>
+</html>
