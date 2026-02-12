@@ -83,12 +83,21 @@
   </div>
 
   <script>
+    // Restore params from sessionStorage if returning from MSAL redirect
     var params = new URLSearchParams(window.location.search);
-    var mode = params.get('mode') || 'redirect';
-    var redirectUrl = params.get('redirect') || '';
-    var clientId = params.get('client_id') || '';
-    var msClientId = params.get('ms_client_id') || '';
+    var mode = params.get('mode') || sessionStorage.getItem('apalepa_auth_mode') || 'redirect';
+    var redirectUrl = params.get('redirect') || sessionStorage.getItem('apalepa_auth_redirect') || '';
+    var clientId = params.get('client_id') || sessionStorage.getItem('apalepa_auth_client_id') || '';
+    var msClientId = params.get('ms_client_id') || sessionStorage.getItem('apalepa_auth_ms_client_id') || '';
     var msalInstance = null;
+
+    // Save params to sessionStorage for MSAL redirect return
+    if (params.get('client_id')) {
+      sessionStorage.setItem('apalepa_auth_mode', mode);
+      sessionStorage.setItem('apalepa_auth_redirect', redirectUrl);
+      sessionStorage.setItem('apalepa_auth_client_id', clientId);
+      sessionStorage.setItem('apalepa_auth_ms_client_id', msClientId);
+    }
 
     if (!clientId) {
       document.getElementById('loginError').textContent = 'Parâmetros em falta. Aceda à aplicação pelo link habitual.';
@@ -101,6 +110,12 @@
 
     // Unified token sender for all providers
     function sendTokenToOpener(token, provider) {
+      // Clean up saved params
+      sessionStorage.removeItem('apalepa_auth_mode');
+      sessionStorage.removeItem('apalepa_auth_redirect');
+      sessionStorage.removeItem('apalepa_auth_client_id');
+      sessionStorage.removeItem('apalepa_auth_ms_client_id');
+
       if (mode === 'popup' && window.opener) {
         window.opener.postMessage({ type: 'auth-token', idToken: token, provider: provider }, '*');
         window.close();
